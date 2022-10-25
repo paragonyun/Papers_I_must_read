@@ -14,7 +14,7 @@ train_loader, val_laoder, test_loader = return_dataloaders(train_dataset, val_da
 model = MyGooLeNet()
 
 # configs
-NUM_EPOCH = 10
+NUM_EPOCH = 1
 CRITERION = nn.CrossEntropyLoss()
 LR = 0.001
 OPTIMIZER = torch.optim.SGD(model.parameters(), lr=LR, momentum=0.9)
@@ -22,7 +22,7 @@ OPTIMIZER = torch.optim.SGD(model.parameters(), lr=LR, momentum=0.9)
 # LR Scheduler 구현
 
 print('Model Architecture 🚩')
-print(summary(model, input_size=(3,224,224), device=('cuda:0' if torch.cuda.is_available() else 'cpu')))
+print(summary(model, input_size=(3,224,224), device='cpu'))
 
 trainer = Train(model=model, 
                 num_epoch=NUM_EPOCH,
