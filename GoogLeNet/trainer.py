@@ -1,5 +1,4 @@
-from cmath import phase
-from logging import critical
+
 import torch
 import torch.nn as nn
 import time
@@ -56,7 +55,7 @@ class Train :
 
         print('\n\n')
         print('✨ Start Evaluation... ✨')
-        test_loss, test_acc = eval(phase='test')
+        test_loss, test_acc = self.eval(phase='test')
         print(f'TEST LOSS : {test_loss:.3f}\tTEST ACC : {test_acc*100:.2f}%')
 
 
@@ -64,6 +63,7 @@ class Train :
         epoch_loss, epoch_acc = 0, 0
         self.model.train()
         self.model.train_mode = True
+        self.model.to(self.device)
 
         for imgs, labels in tqdm(self.tr_loader) :
             imgs, labels = imgs.to(self.device), labels.to(self.device)
@@ -91,7 +91,7 @@ class Train :
         return epoch_loss/len(self.tr_loader), epoch_acc/len(self.tr_loader)
 
 
-    def eval(self, phase='valid') : 
+    def eval(self, phase=None) : 
         epoch_loss, epoch_acc = 0, 0
         self.model.train_mode = False
 
