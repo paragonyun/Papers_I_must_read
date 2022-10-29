@@ -1,7 +1,7 @@
 from dataset import CatVsDogImageFoler
 from dataloader import return_dataloaders
 from trainer import Train
-from model import MyGooLeNet
+from model import MyGoogLeNet
 import torch.nn as nn
 import torch
 from torchsummary import summary
@@ -11,7 +11,7 @@ train_dataset, val_dataset , test_dataset = dataset.dataset()
 
 train_loader, val_laoder, test_loader = return_dataloaders(train_dataset, val_dataset, test_dataset)
 
-model = MyGooLeNet()
+model = MyGoogLeNet()
 
 # configs
 NUM_EPOCH = 1
