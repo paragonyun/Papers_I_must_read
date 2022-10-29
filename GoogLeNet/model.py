@@ -3,9 +3,9 @@ from turtle import forward, st
 import torch
 import torch.nn as nn
 
-class MyGooLeNet(nn.Module) :
+class MyGoogLeNet(nn.Module) :
     def __init__(self, dim=64, num_cls=2, train_mode = True) :
-        super(MyGooLeNet, self).__init__()
+        super(MyGoogLeNet, self).__init__()
 
         self.train_mode = train_mode
 
