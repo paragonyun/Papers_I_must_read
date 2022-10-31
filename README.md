@@ -5,8 +5,8 @@ Git Hub엔 논문에 대한 간단한 소감과 느낀점, 구현 코드를 올�
 <br>
 
 ## Paper Review List  
-[  ] GoogLeNet  
-[  ] InceptionNet  
+[✅] [GoogLeNet](https://blog.naver.com/paragonyun/222914679046)  
+[  ] Inception V2-V3  
 [  ] ResNet  
 [  ] EfficientNet  
 [  ] Attention  
