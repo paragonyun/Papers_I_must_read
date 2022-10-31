@@ -1,4 +1,5 @@
-# GooLeNet(2014)
+# GoogLeNet(2014)
+[리뷰보기](https://blog.naver.com/paragonyun/222914679046)
 ## 핵심 요약
 - 기존의 Dense Matrix보다 Neuro Science에 기반한 **Sparse Connection** 방법 제안
 - Sparse Connection을 하는 경우, 더 효율적인 연산이 가능할 것으로 예상했지만 기존의 Computing 환경이 Dense에 맞춰졌기 때문에 살짝 변형된 방법을 사용했어야 했음
@@ -15,7 +16,7 @@
 
 <br>
 
-- GooLeNet은 굉장히 깊고 넓은 모델 구조를 가짐. 이에 Gradient가 끝까지 잘 전파되지 못하는 현상이 발견됨.
+- GoogLeNet은 굉장히 깊고 넓은 모델 구조를 가짐. 이에 Gradient가 끝까지 잘 전파되지 못하는 현상이 발견됨.
 - 이를 방지하기 위해 중간에 2개의 Classifier를 삽입함. 이들을 논문에선 **Auxiliary Classifier**라고 함.
 - 이들의 삽입으로 Gradient 소실을 방지하고 정규화 효과까지 노려볼 수 있었음
 - 이들의 Loss는 0.3의 Weight를 주었고, Inference 때는 사용하지 않음.(Discarded)
