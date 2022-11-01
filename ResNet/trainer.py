@@ -100,7 +100,7 @@ class Train :
 
             for imgs, labels in loader :
                 imgs, labels = imgs.to(self.device), labels.to(self.device)
-                y_preds = self.model(imgs)
+                y_preds, _ = self.model(imgs)
                 
                 loss = self.criterion(y_preds, labels)
                 acc = calculate_acc(y_preds, labels)
