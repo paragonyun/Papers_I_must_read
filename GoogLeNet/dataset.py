@@ -3,12 +3,9 @@ import os
 from utils import ImageTransform, train_val_split
 from torchvision.datasets import ImageFolder
 
-# print(os.getcwd())
-os.chdir('./GoogLeNet')
-# print(os.getcwd())
 
-TRAIN_ROOT = './train'
-TEST_ROOT = './test'
+TRAIN_ROOT = r'mydata\train'
+TEST_ROOT = r'mydata\test'
 
 RESIZE = (224, 224) ## GoogLeNet Recommend Resolution
 MEAN = (0.485, 0.456, 0.406)
