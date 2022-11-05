@@ -12,6 +12,8 @@ Git Hub엔 논문에 대한 간단한 소감과 느낀점, 구현 코드를 올�
 [  ] Attention  
 [  ] CGD  
 [  ] Active Learning  
+[  ] Multiple Instance Learning
+
 
 <br>
 
