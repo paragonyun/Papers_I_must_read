@@ -10,10 +10,10 @@ Git Hub엔 논문에 대한 간단한 소감과 느낀점, 구현 코드를 올�
 [✅] [ResNet](https://blog.naver.com/paragonyun/222921380699)  
 [  ] EfficientNet  
 [✅] [Attention-based Deep MIL](https://www.notion.so/Paper-Reading-776c5c01bccc427bb774aad421463829)  
+[✅]  Deep Learning Models for Histopathological Classification of Gastic and Colonic Epithelial Tumours
 [  ] Transformer  
 [  ] CGD  
 [  ] Active Learning  
-[  ] Multiple Instance Learning
 
 
 <br>
