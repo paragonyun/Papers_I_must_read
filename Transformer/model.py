@@ -30,12 +30,36 @@ class Transformer(nn.Module) :
         out = self.decoder(z, c) ## decoder는 문장과 encoder에서 나온 context를 함께 받습니다.
         return out
 
+    def making_pad_mask(self, query, key, pad_idx=1) :
+        # q : (n_batch, query_seq_len)
+        # k : (n_batch, key_seq_len)
+        query_seq_len, key_seq_len = query.size(1), key.size(1)
+
+        # ne : 같은 위치에 있는 값들을 비교하여 다르면 True, 같으면 False 반환
+        # tensor.ne(value) : 해당 Tensor와 비교했을 때, value면 False, 다르면 True 반환
+        key_mask = key.ne(pad_idx).unsqueeze(1).unsqueeze(2) # unsqueeze로 차원을 더 만들어 줌
+        key_mask = key_mask.repeat(1, 1, 1, key_seq_len)
+
+        query_mask = query.ne(pad_idx).unsqueeze(1).unsqueeze(2)
+        query_mask = query_mask.repeat(1, 1, 1, key_seq_len)
+
+        mask = key_mask & query_mask
+        mask.requires_grad = False
+
+        return mask
+
+    def make_src_mask(self, src) :
+        pad_mask = self.make_src_mask(src, src)
+        return pad_mask
+
     def forward(self, src, tgt, src_mask) :
 
         encoder_out = self.encode(src, src_mask)
         y = self.decode(tgt, encoder_out)
 
         return y
+
+
 
 
 class Encoder(nn.Module) :
@@ -123,6 +147,8 @@ class MultiHeadAttentionLayer(nn.Module) :
         out = self.out_fc(out)
         return out
 
+
+
 def calculate_attention(query, key, value, mask) :
     '''
     self attention을 계산하는 곳입니다. 
@@ -146,5 +172,3 @@ def calculate_attention(query, key, value, mask) :
     return out
 
 
-def mask_pad_mask() :
-    return
