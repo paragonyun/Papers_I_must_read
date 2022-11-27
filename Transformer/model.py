@@ -1,6 +1,10 @@
 import torch
 import torch.nn as nn
+import torch.nn.functional as F
+
 import copy
+import math
+
 
 class Transformer(nn.Module) :
     '''
@@ -17,8 +21,8 @@ class Transformer(nn.Module) :
         self.decoder = decoder
 
 
-    def encode(self, x) : ## encoder의 forward 같은 곳입니다.
-        out = self.encoder(x)
+    def encode(self, src, src_mask) : ## encoder의 forward 같은 곳입니다.
+        out = self.encoder(src, src_mask)
         return out
 
 
@@ -26,10 +30,10 @@ class Transformer(nn.Module) :
         out = self.decoder(z, c) ## decoder는 문장과 encoder에서 나온 context를 함께 받습니다.
         return out
 
-    def forward(self, x, z) :
+    def forward(self, src, tgt, src_mask) :
 
-        c = self.encode(x)
-        y = self.decode(z, c)
+        encoder_out = self.encode(src, src_mask)
+        y = self.decode(tgt, encoder_out)
 
         return y
 
@@ -48,11 +52,12 @@ class Encoder(nn.Module) :
             self.layers.append(copy.deepcopy(encoder_block)) 
 
     
-    def forward(self, x) :
-        out = x
+    def forward(self, src, src_mask) :
+        ## mask를 받습니다.
+        out = src
 
         for layer in self.layers :
-            out = layer(out)
+            out = layer(out, src_mask)
 
         return out
 
@@ -70,14 +75,76 @@ class EncoderBlock(nn.Module) :
         self.position_ff = position_ff
 
     
-    def forward(self, x) :
-        out = x
-        out = self.self_attention(out)
+    def forward(self, src, src_mask) :
+        ## Mask를 외부에서 생성할 것이므로 인자로 받습니다.
+        out = src
+        out = self.self_attention(query=out, key=out, valu=out, mask=src_mask)
         out = self.position_ff(out)
 
         return out
 
 
+class MultiHeadAttentionLayer(nn.Module) :
+    def __init__(self, d_model, h, qkv_fc, out_fc) :
+        super(MultiHeadAttentionLayer, self).__init__()
+
+        self.d_model = d_model
+        self.h = h
+        self.q_fc = copy.deepcopy(qkv_fc)
+        self.k_fc = copy.deepcopy(qkv_fc)
+        self.v_fc = copy.deepcopy(qkv_fc)
+        self.out_fc = out_fc
+
+    def forward(self, *args, query, key, value, mask=None) :
+        '''
+        각 input의 차원
+        q, k v : (n_batch, seq_len, d_embed) ## 이 3개를 transform에 넣어 Q, K, V를 얻습니다.
+        mask : (n_batch, seq_len, seq_len)
+        return : (n_batch, h, seq_len, d_k)
+        '''
+        n_batch = query.size(0)
+
+        def transform(x, fc) :
+            out = fc(x)
+            out = out.view(n_batch, -1, self.h, self.d_model//self.h) # (n_batch, seq_len, h, d_k)
+            out = out.transpose(1, 2) # (n_batch, h, seq_len, d_k)
+
+            return out
+
+        ## transform 함수에서 각각을 지정해준 fc를 거쳐 Q, K, V를 생성해줍니다.
+        query = transform(query, self.q_fc)
+        key = transform(key, self.k_fc)
+        value = transform(value, self.v_fc)
+
+        out = self.calculate_attention(query, key, value, mask) ## Attention Score를 계산합니다.
+        out = out.transpose(1, 2) # (n_batch, seq_len, h, d_k)
+        ## contiguous = 메모리 저장 상태를 axis 기준으로 하기 위함
+        out = out.contiguous().view(n_batch, -1, self.d_model) # (n_batch, seq_len, d_model)
+        out = self.out_fc(out)
+        return out
+
+def calculate_attention(query, key, value, mask) :
+    '''
+    self attention을 계산하는 곳입니다. 
+    여러 개의 Q, K, V를 받으므로 batch의 수가 존재하며
+    각 단계 뒤에 shape을 적었습니다.
+    '''
+    # q, k, v : (n_batch, seq_len, d_k) ## d_k : 임베딩의 차원 수
+    # mask : (n_batch, seq_len, seq_len) ## mask matrix의 shape!!
+    d_k = key.shape[-1]
+
+    attention_score = torch.matmul(query, key.transpose(-2,-1)) ## 마지막 2개의 위치를 바꿔줍니다.
+    attention_score = attention_score / math.sqrt(d_k)
+
+    if mask is not None : ## 마스크가 존재하면...
+        attention_score = attention_score.masked_fill(mask==0, -1e9) ## 0인 지점을 1e-9로 채웁니다.
+
+    attention_prob = F.softmax(attention_score, dim=-1) # n_batch, seq_len, d_k -> d_k 차원의 값의 합을 1로 만들어줍니다.
+
+    out = torch.matmul(attention_prob, value) # n_batch, seq_len, d_k
+
+    return out
 
 
-
+def mask_pad_mask() :
+    return
