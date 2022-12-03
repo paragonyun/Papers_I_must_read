@@ -96,3 +96,17 @@ Encoder들은 Key Vector와 Value Vector들을 보낸다.
 Input에 대한 단어들의 Attention Map을 Decoder에서 만드려면 Key Vector와 Value Vector가 필요하기 때문!!  
   
 물론 학습할 때, Decoder는 Masking을 하게 됨. 이전 단어들만 보고 뒤에 있는 단어들은 참고하지 못하게 하기 위함!!(정답을 미리 알면 안 되니까)  
+
+<br>
+
+## Training
+- GPU : P100 8개  
+- Light Model : 한 스텝에 0.4초 -> 100,000번 학습, 12시간 소요  
+- Big Model : 한 스텝에 1초 -> 300,000번 학습, 3.5일 소요  
+- Optimizer  
+    - Adam (b1=0.9, b2=0.98, e=1e-9)
+    - Warmup-Stemp LR Scheduler
+- Regularization
+    - Residual Connection
+    - Dropout
+    - Label Smoothing
