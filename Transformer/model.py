@@ -4,7 +4,7 @@ import torch.nn.functional as F
 
 import copy
 import math
-
+import numpy as np
 
 class Transformer(nn.Module) :
     '''
@@ -14,23 +14,24 @@ class Transformer(nn.Module) :
     따로 class로 지정해줍니다.
     '''
 
-    def __init__(self, encoder, decoder) :
+    def __init__(self, src_embed, tgt_embed, encoder, decoder) :
         super(Transformer, self).__init__()
 
+        self.src_embed = src_embed
+        self.tgt_embed = tgt_embed
         self.encoder = encoder
         self.decoder = decoder
 
 
     def encode(self, src, src_mask) : ## encoder의 forward 같은 곳입니다.
-        out = self.encoder(src, src_mask)
-        return out
+        return self.encoder(self.src_embed(src), src_mask)
 
 
-    def decode(self, z, c) : ## decoder의 forward 같은 곳입니다.
-        out = self.decoder(z, c) ## decoder는 문장과 encoder에서 나온 context를 함께 받습니다.
-        return out
+    def decode(self, tgt, encoder_out, tgt_mask, src_tgt_mask) : ## decoder의 forward 같은 곳입니다.
+        ## decoder는 문장과 encoder에서 나온 context를 함께 받습니다.
+        return self.decoder(self.tgt_embed(tgt), encoder_out, tgt_mask, src_tgt_mask)
 
-    def making_pad_mask(self, query, key, pad_idx=1) :
+    def make_pad_mask(self, query, key, pad_idx=1) :
         # q : (n_batch, query_seq_len)
         # k : (n_batch, key_seq_len)
         query_seq_len, key_seq_len = query.size(1), key.size(1)
@@ -52,10 +53,45 @@ class Transformer(nn.Module) :
         pad_mask = self.make_src_mask(src, src)
         return pad_mask
 
+    def make_subsequent_mask(self, query, key) :
+        """
+        Masking을 해주는 곳, 다만 Token의 정답값을 알지 못하게 이후의 값을 Masking해줌
+        [[1, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+        [1, 1, 0, 0, 0, 0, 0, 0, 0, 0],
+        [1, 1, 1, 0, 0, 0, 0, 0, 0, 0],
+        [1, 1, 1, 1, 0, 0, 0, 0, 0, 0],
+        [1, 1, 1, 1, 1, 0, 0, 0, 0, 0],
+        [1, 1, 1, 1, 1, 1, 0, 0, 0, 0],
+        [1, 1, 1, 1, 1, 1, 1, 0, 0, 0],
+        [1, 1, 1, 1, 1, 1, 1, 1, 0, 0],
+        [1, 1, 1, 1, 1, 1, 1, 1, 1, 0],
+        [1, 1, 1, 1, 1, 1, 1, 1, 1, 1]]
+        """
+        query_seq_len, key_seq_len = query.size(1), key.size(1)
+
+        tril = np.tril(np.ones((query_seq_len, key_seq_len)), k=0).astype('unit8')
+        mask = torch.tensor(tril, dtype=torch.bool, requires_grad=False, device=query.device)
+
+        return mask
+
+    def make_tgt_mask(self, tgt) :
+        """
+        Encoder와 마찬가지로 Pad Mask를 해주는 부분
+        """
+        pad_mask = self.make_pad_mask(tgt, tgt)
+        seq_mask = self.make_subsequent_mask(tgt, tgt)
+        mask = pad_mask & seq_mask
+
+        return pad_mask & seq_mask
+
+
     def forward(self, src, tgt, src_mask) :
 
+        src_mask = self.make_src_mask(src)
+        tgt_mask = self.make_tgt_mask(tgt)
+        src_tgt_mask = self.make_src_tgt_mask(src, tgt)
         encoder_out = self.encode(src, src_mask)
-        y = self.decode(tgt, encoder_out)
+        y = self.decode(tgt, encoder_out, tgt_mask, src_tgt_mask)
 
         return y
 
@@ -97,14 +133,16 @@ class EncoderBlock(nn.Module) :
 
         self.self_attention = self.attention
         self.position_ff = position_ff
+        self.residuals = [ResidualConnectionLayer() for _ in range(2)]
 
     
     def forward(self, src, src_mask) :
         ## Mask를 외부에서 생성할 것이므로 인자로 받습니다.
         out = src
-        out = self.self_attention(query=out, key=out, valu=out, mask=src_mask)
-        out = self.position_ff(out)
 
+        # out에 Residual을 적용하기 위해 lambda 사용
+        out = self.residuals[0](out, lambda out: self.self_attention(query=out, key=out, value=out, mask=src_mask))
+        out = self.residuals[1](out, self.position_ff)
         return out
 
 
@@ -172,3 +210,124 @@ def calculate_attention(query, key, value, mask) :
     return out
 
 
+class PositionWiseFeedForwardLayer(nn.Module) :
+
+    def __init__(self, fc1, fc2) :
+        super(PositionWiseFeedForwardLayer, self).__init__()
+        self.fc1 = fc1
+        self.relu = nn.ReLU() 
+        self.fc2 = fc2
+
+    def forward(self, x) :
+        out = x 
+        out = self.fc1(out)
+        out = self.relu(out)
+        out = self.fc2(out)
+        return out
+
+
+class ResidualConnectionLayer(nn.Module) :
+
+    def __init__(self) :
+        super(ResidualConnectionLayer, self).__init__()
+
+    def forward(self, x, sub_layer) :
+        out = x 
+        out = sub_layer(out)
+        out = out + x
+        return out
+
+
+
+"""Decoer
+Decoer의 Input : Encoder로부터 나온 Context과 Sentence
+                이때 Sentence는 Teacher Forcing으로 Label데이터에 해당하며
+                모델이 학습의 방향을 잘 잡을 수 있도록 도와줌
+"""
+
+
+
+
+class Decoder(nn.Module):
+
+    """
+    두번째 Self-Attention Layer는 Input을 2개 받는다.
+    1. Encoder에 넘어온 거 : K, V로 활용
+    2. 이전 Self-Attention에서 온 거 : Q로 활용
+    => 2의 1에 대한 Attention을 계산하는 역할!! 
+
+    ** 목적 **
+    - Teacher Forcing으로 넘어온 Sentencㄷ와 최대한 유사한 Predict Sentence 생성!!
+    """
+
+    def __init__(self, decoder_block, n_layer) :
+        super(Decoder, self).__init__()
+        self.n_layer = n_layer
+        self.layers = nn.ModuleList([copy.deepcopy(decoder_block) for _ in range(self.n_layer)])
+
+
+    def forward(self, tgt, encoder_out, tgt_mask, src_tgt_mask) :
+        out = tgt
+        for layer in self.layers :
+            out = layer(out, encoder_out, tgt_mask, src_tgt_mask)
+
+        return out
+
+
+class DecoderBlock(nn.Module) :
+
+    def __init__(self, self_attention, cross_attention, position_ff):
+        super(DecoderBlock, self).__init__()
+        self.self_attention = self_attention
+        self.cross_attention = cross_attention
+        self.position_ff = position_ff
+        self.residuals = [ResidualConnectionLayer() for _ in range(3)]
+
+    
+    def forward(self, tgt, encoder_out, tgt_mask, src_tgt_mask) :
+        out = tgt
+        out = self.residuals[0](out, lambda out: self.self_attention(query=out, key=out, value=out, mask=tgt_mask))
+        out = self.residuals[1](out, lambda out: self.cross_attention(query=out, key=encoder_out, value=encoder_out, mask=src_tgt_mask))
+        out = self.residuals[2](out, self.position_ff)
+        return out
+
+
+class TransformerEmbedding(nn.Module) :
+
+    def __init__(self, token_embed, pos_embed) :
+        super(TransformerEmbedding, self).__init__()
+        self.embedding = nn.Sequential(token_embed, pos_embed)
+
+    def forward(self, x) :
+        out = self.embedding(x)
+
+        return out
+
+class TokenEmbedding(nn.Module) :
+
+    def __init__(self, d_embed, vocab_size) :
+        super(TokenEmbedding, self).__init__()
+        self.embedding = nn.Embedding(vocab_size, d_embed)
+        self.d_embed = d_embed
+
+    def forward(self, x) :
+        out = self.embedding(x) * math.sqrt(self.d_embed)
+        return out
+
+
+class PositionalEmbedding(nn.Module) :
+    def __init__(self, d_embed, max_len=256, device=torch.device('cpu')) :
+        super(PositionalEmbedding, self).__init__()
+        encoding = torch.zeros(max_len, d_embed)
+        encoding.requires_grad = False
+        position = torch.arange(0, max_len).float().unsqueeze(1)
+        div_term = torch.exp(torch.arange(0, d_embed, 2) * -(math.log(10000.0) / d_embed))
+        encoding[:, 0::2] = torch.sin(position * div_term)
+        encoding[:, 1::2] = torch.cos(position * div_term)
+        self.encoding = encoding.unsqueeze(0).to(device)
+
+    def forward(self, x) :
+        _, seq_len, _ = x.size()
+        pos_embed = self.encoding[:, :seq_len, :]
+        out = x + pos_embed
+        return out
