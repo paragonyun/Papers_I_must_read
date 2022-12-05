@@ -11,7 +11,7 @@ Git Hub엔 논문에 대한 간단한 소감과 느낀점, 구현 코드를 올�
 [  ] EfficientNet  
 [✅] [Attention-based Deep MIL](https://www.notion.so/Paper-Reading-776c5c01bccc427bb774aad421463829)  
 [✅] [Deep Learning Models for Histopathological Classification of Gastic and Colonic Epithelial Tumours](https://www.notion.so/Paper-Reading-776c5c01bccc427bb774aad421463829)  
-[  ] Transformer  
+[✅] [Transformer](https://blog.naver.com/paragonyun/222947049259) 
 [  ] CGD  
 [  ] Active Learning  
 
@@ -21,5 +21,5 @@ Git Hub엔 논문에 대한 간단한 소감과 느낀점, 구현 코드를 올�
 ## Paper Implementation List  
 [✅] GoogLeNet  
 [✅] ResNet  
-[  ] Transformer  
+[✅] Transformer  
 [  ] CGD  
