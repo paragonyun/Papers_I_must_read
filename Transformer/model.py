@@ -14,13 +14,14 @@ class Transformer(nn.Module) :
     따로 class로 지정해줍니다.
     '''
 
-    def __init__(self, src_embed, tgt_embed, encoder, decoder) :
+    def __init__(self, src_embed, tgt_embed, encoder, decoder, generator) :
         super(Transformer, self).__init__()
 
         self.src_embed = src_embed
         self.tgt_embed = tgt_embed
         self.encoder = encoder
         self.decoder = decoder
+        self.generator = generator
 
 
     def encode(self, src, src_mask) : ## encoder의 forward 같은 곳입니다.
@@ -85,15 +86,16 @@ class Transformer(nn.Module) :
         return pad_mask & seq_mask
 
 
-    def forward(self, src, tgt, src_mask) :
-
+    def forward(self, src, tgt):
         src_mask = self.make_src_mask(src)
         tgt_mask = self.make_tgt_mask(tgt)
         src_tgt_mask = self.make_src_tgt_mask(src, tgt)
         encoder_out = self.encode(src, src_mask)
-        y = self.decode(tgt, encoder_out, tgt_mask, src_tgt_mask)
+        decoder_out = self.decode(tgt, encoder_out, tgt_mask, src_tgt_mask)
+        out = self.generator(decoder_out)
+        out = F.log_softmax(out, dim=-1)
 
-        return y
+        return out, decoder_out
 
 
 
@@ -315,9 +317,9 @@ class TokenEmbedding(nn.Module) :
         return out
 
 
-class PositionalEmbedding(nn.Module) :
+class PositionalEncoding(nn.Module) :
     def __init__(self, d_embed, max_len=256, device=torch.device('cpu')) :
-        super(PositionalEmbedding, self).__init__()
+        super(PositionalEncoding, self).__init__()
         encoding = torch.zeros(max_len, d_embed)
         encoding.requires_grad = False
         position = torch.arange(0, max_len).float().unsqueeze(1)
@@ -331,3 +333,61 @@ class PositionalEmbedding(nn.Module) :
         pos_embed = self.encoding[:, :seq_len, :]
         out = x + pos_embed
         return out
+
+
+def build_model(src_vocab_size, tgt_vocab_size, device=torch.device("cpu"), max_len=256, d_embed=512, n_layer=6, d_model=512, h=8, d_ff=2048):
+    import copy
+    copy = copy.deepcopy
+
+    src_token_embed = TokenEmbedding(
+                                    d_embed = d_embed,
+                                    vocab_size = src_vocab_size)
+    tgt_token_embed = TokenEmbedding(
+                                    d_embed = d_embed,
+                                    vocab_size = tgt_vocab_size)
+    pos_embed = PositionalEncoding(
+                                d_embed = d_embed,
+                                max_len = max_len,
+                                device = device)
+
+    src_embed = TransformerEmbedding(
+                                    token_embed = src_token_embed,
+                                    pos_embed = copy(pos_embed))
+    tgt_embed = TransformerEmbedding(
+                                    token_embed = tgt_token_embed,
+                                    pos_embed = copy(pos_embed))
+
+    attention = MultiHeadAttentionLayer(
+                                        d_model = d_model,
+                                        h = h,
+                                        qkv_fc = nn.Linear(d_embed, d_model),
+                                        out_fc = nn.Linear(d_model, d_embed))
+    position_ff = PositionWiseFeedForwardLayer(
+                                            fc1 = nn.Linear(d_embed, d_ff),
+                                            fc2 = nn.Linear(d_ff, d_embed))
+
+    encoder_block = EncoderBlock(
+                                self_attention = copy(attention),
+                                position_ff = copy(position_ff))
+    decoder_block = DecoderBlock(
+                                self_attention = copy(attention),
+                                cross_attention = copy(attention),
+                                position_ff = copy(position_ff))
+
+    encoder = Encoder(
+                    encoder_block = encoder_block,
+                    n_layer = n_layer)
+    decoder = Decoder(
+                    decoder_block = decoder_block,
+                    n_layer = n_layer)
+    generator = nn.Linear(d_model, tgt_vocab_size)
+
+    model = Transformer(
+                        src_embed = src_embed,
+                        tgt_embed = tgt_embed,
+                        encoder = encoder,
+                        decoder = decoder,
+                        generator = generator).to(device)
+    model.device = device
+
+    return model
