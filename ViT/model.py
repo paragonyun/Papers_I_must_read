@@ -81,7 +81,7 @@ class MultiheadedSelfAttention(nn.Module):
         attention = torch.softmax(q @ k / self.scale, dim=-1) # 유사도를 구하는 연산입니다. ## -> (b, Dh, N, N)
 
         x = self.dropout(attention) @ v # dropout을 거친 뒤 v와도 matmul을 해줍니다. ## -> (b, Dh, N, k)
-        x = x.permute(0,2,1,3).reshpae(batch_size, -1, self.latent_vec_dim) # 모든 결과를 cocnat 시키기 위해 reshape을 사용합니다. -> (b, N, D) ## D = Dh*k
+        x = x.permute(0,2,1,3).reshape(batch_size, -1, self.latent_vec_dim) # 모든 결과를 cocnat 시키기 위해 reshape을 사용합니다. -> (b, N, D) ## D = Dh*k
 
         return x, attention # layter별 attention score를 확인하기 위해 attention도 return해줍니다.
 
