@@ -56,7 +56,7 @@ if __name__ == "__main__":
         print(vit)
 
         print("🚀Start Training...🚀")
-        criterion = nn.CrossEngropyLoss()
+        criterion = nn.CrossEntropyLoss()
         optimizer = optim.Adam(vit.parameters(), lr=args.lr, weight_decay=args.weight_decay)
 
         scheduler = optim.lr_scheduler.OneCycleLR(optimizer, max_lr=args.lr, steps_per_epoch=len(train_loader), epochs=args.epochs)
