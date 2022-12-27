@@ -52,6 +52,9 @@ if __name__ == "__main__":
         vit.load_state_dict(torch.load('./BEST_MODEL.pth'))
 
     if args.mode == "train":
+        print("🚩Model Architecture🚩")
+        print(vit)
+
         print("🚀Start Training...🚀")
         criterion = nn.CrossEngropyLoss()
         optimizer = optim.Adam(vit.parameters(), lr=args.lr, weight_decay=args.weight_decay)
