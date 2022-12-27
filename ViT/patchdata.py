@@ -60,7 +60,7 @@ class Flattened2Dpaches:
             transforms.RandomCrop(self.img_size, padding=2), # padding으로 crop을 해도 원본 사이즈가 유지되도록 합니다.
             transforms.RandomHorizontalFlip(),
             transforms.ToTensor(),
-            transforms.Nomalize(mean, std),
+            transforms.Normalize(mean, std),
             PatchGenerator(self.patch_size)
         ])
 
