@@ -87,8 +87,8 @@ class Flattened2Dpaches:
         sampler = torch.utils.data.sampler.WeightedRandomSampler(weights, len(weights)) # 가중치가 적용된 sampler 생성
         
         trainloader = DataLoader(trainset, batch_size=self.batch_size, sampler=sampler)
-        valloader = DataLoader(valset, batch_size=self.batch_size, sampler=sampler)
-        testloader = DataLoader(testset, batch_size=self.batch_size, sampler=sampler)
+        valloader = DataLoader(valset, batch_size=self.batch_size, shuffle=False)
+        testloader = DataLoader(testset, batch_size=self.batch_size, shuffle=False)
 
         return trainloader, valloader, testloader
 
