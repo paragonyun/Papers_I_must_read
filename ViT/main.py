@@ -7,6 +7,8 @@ import torch.optim as optim
 import torch.nn as nn
 import argparse
 
+from tqdm import tqdm
+
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='Vision Transformer')
     parser.add_argument('--img_size', default=32, type=int, help='image size')
@@ -56,6 +58,7 @@ if __name__ == "__main__":
         print(vit)
 
         print("🚀Start Training...🚀")
+        print(f"Using Resource : {device}")
         criterion = nn.CrossEntropyLoss()
         optimizer = optim.Adam(vit.parameters(), lr=args.lr, weight_decay=args.weight_decay)
 
@@ -67,7 +70,7 @@ if __name__ == "__main__":
         for epoch in range(1, args.epochs + 1):
             running_loss = 0
 
-            for imgs, labels in train_loader:
+            for imgs, labels in tqdm(train_loader):
                 imgs, labels = imgs.to(device), labels.to(device)
                 optimizer.zero_grad()
                 
