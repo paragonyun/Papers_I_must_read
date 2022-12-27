@@ -34,3 +34,65 @@ if __name__ == "__main__":
     patch_maker = patchdata.Flattened2Dpaches(patch_size=args.patch_size, img_size=args.img_size, batch_size=args.batch_size)
     train_loader, val_loader, test_loader = patch_maker.patchedata()
     
+    patches, _, _ = iter(train_loader).next()
+
+    # Model
+    vit = model.ViT(
+        patch_vec_size=patches.size(2),
+        num_patches=patches.size(1),
+        latent_vec_dim=latent_vec_dim,
+        num_heads=args.num_heads,
+        mlp_hidden_dim=mlp_hidden_dim,
+        drop_rate=args.drop_rate, 
+        num_layers=args.num_layers,
+        num_classes=args.num_classes
+    ).to(device)
+
+    if args.pretrained == 1: ## Inference 할 때 사용합니다.
+        vit.load_state_dict(torch.load('./BEST_MODEL.pth'))
+
+    if args.mode == "train":
+        print("🚀Start Training...🚀")
+        criterion = nn.CrossEngropyLoss()
+        optimizer = optim.Adam(vit.parameters(), lr=args.lr, weight_decay=args.weight_decay)
+
+        scheduler = optim.lr_scheduler.OneCycleLR(optimizer, max_lr=args.lr, steps_per_epoch=len(train_loader), epochs=args.epochs)
+
+        n = len(train_loader)
+        best_acc = args.save_acc
+
+        for epoch in range(1, args.epochs + 1):
+            running_loss = 0
+
+            for imgs, labels in train_loader:
+                imgs, labels = imgs.to(device), labels.to(device)
+                optimizer.zero_grad()
+                
+                preds, _ = vit(imgs)
+                loss = criterion(preds, labels)
+                loss.backward()
+
+                optimizer.step()
+                running_loss += loss.item()
+
+                scheduler.step()
+
+            train_loss = running_loss / n
+            val_acc, val_loss = utils.accuracy(dataloader=val_loader, model=vit)
+
+            if epoch % 10 == 0:
+                print("===="*30)
+                print("📃Training Report📃")
+                print(f"EPOCH [{epoch}/{args.epochs}]\tVAL ACC {val_acc:.2f}")
+                print(f"TRAIN LOSS {train_loss:.3f}\tVAL LOSS {val_loss:.3f}")
+                
+            if val_acc > best_acc :
+                best_acc = val_acc
+                torch.save(vit.state_dict(), './BEST_MODEL.pth')
+                print("✔Best Model is Saved✔")
+            
+    else : ## Inference Mode
+        print("✨TEST 시작...✨")
+        test_acc, test_loss = utils.accuracy(dataloader=test_loader, model=vit)
+        print(f"TEST LOSS {test_loss:.3f}\tTEST ACC {test_acc:.3f}")
+
