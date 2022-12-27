@@ -34,7 +34,7 @@ if __name__ == "__main__":
     patch_maker = patchdata.Flattened2Dpaches(patch_size=args.patch_size, img_size=args.img_size, batch_size=args.batch_size)
     train_loader, val_loader, test_loader = patch_maker.patchedata()
     
-    patches, _, _ = iter(train_loader).next()
+    patches, _, _ = next(iter(train_loader))
 
     # Model
     vit = model.ViT(
