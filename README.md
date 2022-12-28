@@ -14,7 +14,7 @@ Git Hub엔 논문에 대한 간단한 소감과 느낀점, 구현 코드를 올�
 [✅] [Transformer](https://blog.naver.com/paragonyun/222947049259)   
 [  ] CGD  
 [  ] Active Learning  
-[✅] [Bag of Tricks for Image Classification with Convolution Neural Networks](https://blog.naver.com/paragonyun/222956725606) 
+[✅] [Bag of Tricks for Image Classification with Convolution Neural Networks](https://blog.naver.com/paragonyun/222956725606)  
 [  ] An Image is Worth 16x16 Words: Transformers for Image Recognition at Scale  
 
 
@@ -24,5 +24,5 @@ Git Hub엔 논문에 대한 간단한 소감과 느낀점, 구현 코드를 올�
 [✅] GoogLeNet  
 [✅] ResNet  
 [✅] Transformer   
-[  ] ViT  
+[✅] ViT  
 [  ] CGD  
