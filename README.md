@@ -16,6 +16,12 @@ Git Hub엔 논문에 대한 간단한 소감과 느낀점, 구현 코드를 올�
 [  ] Active Learning  
 [✅] [Bag of Tricks for Image Classification with Convolution Neural Networks](https://blog.naver.com/paragonyun/222956725606)  
 [  ] An Image is Worth 16x16 Words: Transformers for Image Recognition at Scale  
+[  ] WaveNet: A Generative Model For Raw Audio  
+[  ] Know What You Don’t Know: Unanswerable Questions for SQuAD  
+[  ] BERT: Pre-training of Deep Bidirectional Transformers for
+Language Understanding  
+[  ] Improving Language Understanding by Generative Pre-Training  
+
 
 
 <br>
@@ -26,3 +32,4 @@ Git Hub엔 논문에 대한 간단한 소감과 느낀점, 구현 코드를 올�
 [✅] Transformer   
 [✅] ViT  
 [  ] CGD  
+[  ] WaveNet  
