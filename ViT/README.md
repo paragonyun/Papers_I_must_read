@@ -35,6 +35,7 @@ _학습방법_
 - Linear Projection
 - Class Token
 - Positional Embedding
+- Inductive Bias
 
 <br>
 
