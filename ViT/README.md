@@ -1,5 +1,5 @@
 # Vision Transformer
-[리뷰보기]()
+[리뷰보기](https://blog.naver.com/paragonyun/222971938804)
 ## 핵심 요약
 - ViT는 기존에 사용되던 CNN을 전혀 사용하지 않고 Transformer의 Encoder 구조만 사용한 모델이다.
 - 여기서 문제는 Attention을 어떻게 ViT에 사용할까인데, 이미지를 Patch로 만들어 일종의 Sequence 형태로 전달한다.
