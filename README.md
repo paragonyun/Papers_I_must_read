@@ -35,3 +35,4 @@ Language Understanding
 [✅] ViT  
 [  ] CGD  
 [  ] WaveNet  
+[  ] DARNN  
