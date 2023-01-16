@@ -77,13 +77,13 @@ class Decoder(nn.Module):
         time_steps: int,
         encoder_hidden_size: int,
         decoder_hidden_size: int,
-        target_length: int,
+        pred_steps: int,
     ):
         super(Decoder, self).__init__()
         self.T = time_steps
         self.m = encoder_hidden_size
         self.p = decoder_hidden_size
-        self.target_length = target_length
+        self.pred_steps = pred_steps
 
         ## l_ti를 구하기 위한 재료들 입니다.
         self.Wd = nn.Linear(in_features=2 * self.p, out_features=self.m, bias=False)
@@ -92,15 +92,15 @@ class Decoder(nn.Module):
 
         ## y_t-1을 구하기 위한 재료들 입니다. (Ww : W물결표)
         self.Ww = nn.Linear(
-            in_features=self.target_length + self.m, out_features=1, bias=True
-        )  # 원래는 m+1인데 target_step을 여러개 해야하므로 self.target_length로 했습니다.
+            in_features=self.pred_steps + self.m, out_features=1, bias=True
+        )  # 원래는 m+1인데 pred_steps 여러개 해야하므로 self.pred_steps 했습니다.
 
         ## f2 function
         self.lstm = nn.LSTM(1, self.p, dropout=0.2)
 
         ## y_hat을 구하기 위한 재료들 입니다.
         self.Wy = nn.Linear(in_features=self.p + self.m, out_features=self.p, bias=True)
-        self.Vy = nn.Linear(self.p, self.target_length, bias=True)
+        self.Vy = nn.Linear(self.p, self.pred_steps, bias=True)
 
     def forward(self, prev_y, Encoding_output):
         batch_size = Encoding_output.size(0)
@@ -143,7 +143,7 @@ class Decoder(nn.Module):
             ## 지금까지 Y의 t 시점과 cv로 y_wave를 얻습니다.
             y2c = torch.cat(
                 (prev_y[:, t, :], cv), dim=1
-            )  # (batch_size, target_length+m)
+            )  # (batch_size, pred_steps+m)
             Yy = self.Ww(y2c)  # (batch_size, 1)
 
             # Eqn 16
@@ -156,15 +156,31 @@ class Decoder(nn.Module):
 
         # Eqn 22
         d2c = torch.cat((hidden_state.squeeze(0), cv), dim=1)  # (batch_size, p + m)
-        y_hat = self.Vy(self.Wy(d2c))  # (batch_size, p)  # (batch_size, target_length)
+        y_hat = self.Vy(self.Wy(d2c))  # (batch_size, p)  # (batch_size, pred_steps)
 
         return y_hat
 
 
 class DARNN(nn.Module):
-    def __init__(self):
+    def __init__(self,
+                num_features: int, 
+                time_steps: int,
+                encoder_hidden_size: int,
+                decoder_hidden_size: int,
+                pred_steps: int
+                ):
         super(DARNN, self).__init__()
+        self.pred_steps = pred_steps
 
-    def forward(self, x):
+        self.encoder = Encoder(num_features=num_features, time_steps=time_steps, hidden_size=encoder_hidden_size)
+        self.decoder = Decoder(time_steps=time_steps, encoder_hidden_size=encoder_hidden_size, decoder_hidden_size=decoder_hidden_size, pred_steps=self.pred_steps)
 
-        return x
+    def forward(self, inputs):
+        X, Y = torch.split(
+            inputs, [inputs.shape[2] - self.pred_steps, self.pred_steps]
+        , dim=2)
+
+        encoderoutput = self.encoder(X)
+        y_hats = self.decoder(Y, encoderoutput)
+
+        return y_hats
